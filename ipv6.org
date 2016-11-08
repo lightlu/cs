@@ -1,0 +1,51 @@
+* IPv6的初步認識
+
+IPv6採用128個bits來定義一個位址，IPv6基本上把前面64個bits當成網段ID，後面64個bits當成Interface ID。
+
+    IPv6沒有遮罩值(Submask)
+    IPv6沒有廣播(Broadcast)
+    IPv6不用網路位址轉譯器(NAT)
+
+* IPv6設定
+
+128 Bits被分成8個區塊，每一個區塊為16個Bits(即2個Bytes)，使用16進位來表示，而且每個區塊之間使用：(冒號)隔開，所以看起來如下
+
+2010: 0000: 0000: 00A2: 0000: AB01: 813D: 01AF
+
+每一個區塊中，前面如果是0可以省略，例如：00A2 可以寫成 A2
+如果是連續區塊皆為0，則可以使用：：(連續兩個冒號)來表示，例如上面的：0000：0000：可以寫成：：。但是這種：：(連續兩個冒號)之表示方法在一個位址中只能出現一次。
+
+* IPv6首碼(Prefix)
+
+IPv6位址需要定義一個首碼，例如 /3，表示前面3個bits，是固定不變的。很像IPv4的遮罩，但它是不同的意義。
+
+* IPv6的位址分類
+
+IPv6分成unicast Address, multicast address, anycast address(取代了broadcast廣播) 這些位址在一台電腦中，是可以同時存在。
+
+    anycast--可以指派給多個網路卡，每個網路卡傳送anycast時，只傳給距離最近的一個節點。
+    multicast--和IPv4 multicast作用相同，基本定義為 1111 1111 /8，即前面8個bits皆為1，所以看起來以 FF 開頭之位址即是 multicast address。
+    unicast又分成link-local, site-local及Global。
+
+Global unicast是由IANA統一分配，是用來連上Internet的位址，基本定義為 001 /3。意思就是最前面的3個bits固定是001不變，以二進位而言，看起來就是如下
+
+0010 0000 0000 0000：(後面7個區塊就省略不列出來囉)
+　　一直到
+0011 1111 1111 1111：(後面7個區塊就省略不列出來囉)
+
+所以用16進位表示，看起來就會像 2000：....一直到 3FFF：....。也就是說當你看到只要是 2 或 3 開頭的IPv6位址，是IANA分配的，可以用此位址直接連上Internet。
+
+* link-local address
+它很像IPv4的APIPA，但不相同的是，APIPA位址的產生是因為設定DHCP Client(自動取得IP Address)，但並沒有被分配到IP Address時，電腦才會產生APIPA位址(例如：169.254.23.3 /16)。IPv6的link-local address則是在網路卡上會自動產生出來，基本定義為 FE80：/10，意思即前面的10個bits要固定為 1111 1110 10，而且其實後面是連接54個0，所以看其來會是 FE80：：
+
+link-local address 的特性跟APIPA幾乎一樣，只能用在和本身電腦所處的區段之其他電腦相互溝通之用，不可以跨Router，意即不可能用此種位址連上Internet。
+
+在RFC-4291（IPv6 Addressing Architecture）中將FE80::/10的IPv6位址定義為Link-local位址，這種位址具備以下特色：
+
+    固定為FE80帶頭（二進位的1111 1110 00開頭再固定接上54 bits的0，最後接64 bits的Interface Identifier）
+    僅限同一個Link（網段）之間使用，不可跨越Router送往其他網段
+    每個已經啟用IPv6的介面會自動各配一個Link-local位址，不論該介面是否已有其他可跨網段的Unicast位址
+    主要用於Neighbor Discovery、Automatic Address Configuration…等用途
+    您可以使用Link-local Address與同網段其他IPv6主機進行溝通，只是執行這個動作時，由於主機上可能有多個介面都配有Link-local Address，因此您需要指定外送介面
+
+特別值得注意的是，在已經啟用IPv6協定的電腦上，不論您的網路介面透過哪一種方式（例如：SLAAC、DHCPv6…）自動取得IPv6位址，也不管您的網路卡取得的IPv6前置碼為何，您會發現預設閘道的格式都是直連路由器的Link-local位址；甚至當您檢查路由器上的IPv6 Routing Table時，只要是動態路由交換得到的路徑資訊，下一站路由器的IPv6位址一概是對方的Link-local Address，因此Link-local Address在IPv6中扮演角色的重要性不可言喻。
